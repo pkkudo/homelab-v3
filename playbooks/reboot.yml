@@ -1,0 +1,10 @@
+---
+- name: Reboot
+  hosts: all
+  gather_facts: false
+  become: true
+
+  tasks:
+    - name: Reboot and wait 120 sec
+      ansible.builtin.reboot:
+        reboot_timeout: 120

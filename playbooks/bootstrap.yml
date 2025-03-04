@@ -1,0 +1,22 @@
+---
+# This playbook is to bootstrap target nodes in the inventory
+# by creating a dedicated user for ansible operation going forward,
+# adding ssh public key and enabling sudo without password challenge.
+#
+# Expectation is that the bootstrap playbook gets executed using known general user credentials or ssh key to remote access the target node,
+# and also the privilege escalation password is known.
+#
+# Example)
+# ansible-playbook -i homelab.yml -e ansible_user=$USER -e ansible_ssh_private_key_file=~/.ssh/id_ed25519 -k -K bootstrap.yml
+#
+# -k will ask for user password
+# -K will ask for priv escalation password
+
+- name: Bootstrap playbook
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    - name: Include bootstrap role
+      ansible.builtin.include_role:
+        name: bootstrap

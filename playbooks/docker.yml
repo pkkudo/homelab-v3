@@ -1,0 +1,56 @@
+---
+# playbook to setup docker node
+
+- name: Docker node playbook
+  hosts: docker:lab_docker
+  gather_facts: true
+  become: true
+
+  tasks:
+    - name: Usage
+      run_once: true
+      ansible.builtin.debug:
+        msg:
+          - Use '--tags cleaninstall' to execute clean up and docker installation tasks
+          - Use '--tags test' to do a test run
+          - Use '--tags status' to see running containers
+      tags: untagged
+
+    - name: End play when untagged
+      ansible.builtin.meta: end_play
+      tags: untagged
+
+    - name: Set tagged action
+      ansible.builtin.set_fact:
+        play_action: "{{ ansible_run_tags | first }}"
+      tags:
+        - cleaninstall
+        - test
+        - status
+
+    - name: Tasks block
+      tags: always
+      block:
+        - name: Clean-install docker
+          ansible.builtin.include_role:
+            name: docker
+            tasks_from: clean-install.yml
+            apply:
+              tags: always
+          when: play_action == "cleaninstall"
+
+        - name: Post-installation test
+          ansible.builtin.include_role:
+            name: docker
+            tasks_from: test.yml
+            apply:
+              tags: always
+          when: play_action == "test"
+
+        - name: Container status
+          ansible.builtin.include_role:
+            name: docker
+            tasks_from: status.yml
+            apply:
+              tags: always
+          when: play_action == "status"

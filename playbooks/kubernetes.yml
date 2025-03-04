@@ -1,0 +1,94 @@
+---
+# kubernetes playbook
+
+- name: Kubernetes playbook
+  hosts: kubernetes:lab_kubernetes
+  gather_facts: true
+  ignore_unreachable: true
+
+  tasks:
+    - name: Usage
+      ansible.builtin.debug:
+        msg:
+          - "Available tags are as follows:"
+          - "'check' - verify kube-readiness on a host"
+          - "'prepare' - make changes on a host to meet the kubernetes requirements"
+          - "'cluster' - spin up a new kubernetes cluster and join all control plane nodes"
+          - "'worker' - join worker nodes"
+          - "'reset' - reset kubernetes cluster and clean up and reboot hosts"
+          - "'download_kube_config' - download .kube/config file to the ansible master"
+      tags: untagged
+      run_once: true
+
+    - name: End play when untagged
+      ansible.builtin.meta: end_play
+      tags: untagged
+
+    - name: End host when role is not set
+      ansible.builtin.meta: end_host
+      when:
+        - not groups['kubernetes']
+        - not groups['lab_kubernetes']
+      tags: always
+
+    - name: Set tagged action
+      ansible.builtin.set_fact:
+        play_action: "{{ ansible_run_tags | first }}"
+      tags:
+        - check
+        - prepare
+        - cluster
+        - worker
+        - reset
+        - download_kube_config
+
+    - name: Tasks block
+      tags: always
+      block:
+        - name: Check tasks
+          ansible.builtin.include_role:
+            name: kubernetes
+            tasks_from: check.yml
+            apply:
+              tags: always
+          when: play_action == "check"
+
+        - name: Preparation tasks
+          ansible.builtin.include_role:
+            name: kubernetes
+            tasks_from: prepare.yml
+            apply:
+              tags: always
+          when: play_action == "prepare"
+
+        - name: Tasks to spin up a new kubernetes cluster
+          ansible.builtin.include_role:
+            name: kubernetes
+            tasks_from: cluster.yml
+            apply:
+              tags: always
+          when: play_action == "cluster"
+
+        - name: Tasks to join worker nodes
+          ansible.builtin.include_role:
+            name: kubernetes
+            tasks_from: worker.yml
+            apply:
+              tags: always
+          when: play_action == "worker"
+
+        - name: Tasks to reset the cluster
+          ansible.builtin.include_role:
+            name: kubernetes
+            tasks_from: reset.yml
+            apply:
+              tags: always
+          when: play_action == "reset"
+
+        - name: Tasks to download kube config file
+          ansible.builtin.include_role:
+            name: kubernetes
+            tasks_from: download-kube-config.yml
+            apply:
+              tags: always
+          when: play_action == "download_kube_config"

@@ -1,0 +1,66 @@
+---
+# DNS playbook
+
+- name: DNS playbook
+  hosts: docker:lab_docker
+  gather_facts: true
+  ignore_unreachable: true
+  serial: 1
+
+  tasks:
+    - name: Usage
+      ansible.builtin.debug:
+        msg:
+          - "Use --tags start|update to run DNS service using docker"
+          - "Use --tags stop to stop DNS service"
+          - "Use --tags enable|disable to enable or disable DNS service on systemd"
+      tags: untagged
+      run_once: true
+
+    - name: End play when untagged
+      ansible.builtin.meta: end_play
+      tags: untagged
+
+    - name: Set tagged action
+      ansible.builtin.set_fact:
+        play_action: "{{ ansible_run_tags | first }}"
+      tags:
+        - start
+        - stop
+        - enable
+        - disable
+
+    - name: Action block
+      tags: always
+      block:
+        - name: Run DNS service
+          ansible.builtin.include_role:
+            name: dns
+            tasks_from: start.yml
+            apply:
+              tags: always
+          when: play_action == "start" or play_action == "update"
+
+        - name: Stop DNS service
+          ansible.builtin.include_role:
+            name: dns
+            tasks_from: dns-stop.yml
+            apply:
+              tags: always
+          when: play_action == "stop"
+
+        - name: Enable DNS service on systemd
+          ansible.builtin.include_role:
+            name: dns
+            tasks_from: dns-enable.yml
+            apply:
+              tags: always
+          when: play_action == "enable"
+
+        - name: Disable DNS service on systemd
+          ansible.builtin.include_role:
+            name: dns
+            tasks_from: dns-disable.yml
+            apply:
+              tags: always
+          when: play_action == "disable"

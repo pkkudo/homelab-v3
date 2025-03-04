@@ -1,0 +1,62 @@
+---
+# playbook to change nameserver settings
+
+- name: Nameservers playbook
+  hosts: all
+  gather_facts: true
+  ignore_unreachable: true
+  become: true
+
+  tasks:
+    - name: Usage
+      ansible.builtin.debug:
+        msg:
+          - "Use --tags check to check the current nameservers settings"
+          - "Set display_skipped_hosts to false to simplify the output"
+          - "ANSIBLE_DISPLAY_SKIPPED_HOSTS=false ansible-playbook playbooks/nameservers.yml --tags check"
+          - ""
+          - "Use --tags update to update nameservers settings"
+      tags: untagged
+      run_once: true
+
+    - name: End play when untagged
+      ansible.builtin.meta: end_play
+      tags: untagged
+
+    - name: Set tagged action
+      ansible.builtin.set_fact:
+        play_action: "{{ ansible_run_tags | first }}"
+      tags:
+        - check
+        - update
+        - test
+
+    - name: Action block
+      tags: always
+      block:
+        - name: Check tasks
+          ansible.builtin.include_role:
+            name: dns
+            tasks_from: check-nameservers.yml
+            apply:
+              tags: always
+          when:
+            - play_action == "check"
+
+        - name: Change tasks
+          ansible.builtin.include_role:
+            name: dns
+            tasks_from: change-nameservers.yml
+            apply:
+              tags: always
+          when:
+            - play_action == "update"
+
+        - name: Testing
+          ansible.builtin.include_role:
+            name: dns
+            tasks_from: test.yml
+            apply:
+              tags: always
+          when:
+            - play_action == "test"

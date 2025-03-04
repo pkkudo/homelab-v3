@@ -1,0 +1,20 @@
+---
+- name: Package upgrade
+  hosts: all
+  gather_facts: true
+  become: true
+
+  tasks:
+    - name: Package upgrade on systems using apt
+      ansible.builtin.apt:
+        name: "*"
+        state: latest
+        update_cache: true
+      when: ansible_pkg_mgr == 'apt'
+
+    - name: Package upgrade on systems using dnf
+      ansible.builtin.dnf:
+        name: "*"
+        state: latest
+        update_cache: true
+      when: ansible_pkg_mgr == 'dnf'

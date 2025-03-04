@@ -1,0 +1,21 @@
+---
+- name: Gather facts from remote hosts
+  hosts: all
+  gather_facts: yes
+
+- name: Save gathered facts as JSON files on local machine
+  hosts: localhost
+  gather_facts: no
+  vars:
+    facts_dir: ./facts
+  tasks:
+    - name: Create directory if not exists
+      ansible.builtin.file:
+        path: "{{ facts_dir }}"
+        state: directory
+
+    - name: Save gathered facts as JSON files
+      ansible.builtin.copy:
+        content: "{{ hostvars[item].ansible_facts | to_nice_json }}"
+        dest: "{{ facts_dir }}/{{ item }}.json"
+      loop: "{{ groups['all'] }}"

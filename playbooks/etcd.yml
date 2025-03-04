@@ -1,0 +1,46 @@
+---
+# etcd playbook
+
+- name: Etcd playbook
+  hosts: etcd:lab_etcd
+  gather_facts: true
+  ignore_unreachable: true
+
+  tasks:
+    - name: Usage
+      ansible.builtin.debug:
+        msg:
+          - "Available tags are as follows:"
+          - "'cluster' - setup etcd cluster"
+          - "'healthcheck' - run healthcheck on the etcd cluster"
+      tags: untagged
+      run_once: true
+
+    - name: End play when untagged
+      ansible.builtin.meta: end_play
+      tags: untagged
+
+    - name: Set tagged action
+      ansible.builtin.set_fact:
+        play_action: "{{ ansible_run_tags | first }}"
+      tags:
+        - cluster
+        - healthcheck
+
+    - name: Cluster tasks
+      ansible.builtin.include_role:
+        name: kubernetes
+        tasks_from: etcd-cluster.yml
+        apply:
+          tags: always
+      when: play_action == "cluster"
+      tags: always
+
+    - name: Health check tasks
+      ansible.builtin.include_role:
+        name: kubernetes
+        tasks_from: etcd-healthcheck.yml
+        apply:
+          tags: always
+      when: play_action == "healthcheck"
+      tags: always
