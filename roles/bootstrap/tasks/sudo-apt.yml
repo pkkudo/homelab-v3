@@ -1,0 +1,18 @@
+---
+- name: Install sudo, apt
+  ansible.builtin.apt:
+    name: sudo
+    state: present
+    update_cache: true
+  become_method: "{{ bootstrap_become_method }}"
+  when: ansible_pkg_mgr == 'apt'
+  become: true
+
+- name: Allow users in "admin-ansible" group to sudo without password challenge
+  ansible.builtin.lineinfile:
+    dest: "/etc/sudoers"
+    state: "present"
+    regexp: "^%admin-ansible"
+    line: "%admin-ansible ALL=(ALL) NOPASSWD: ALL"
+  become_method: "{{ bootstrap_become_method }}"
+  become: true

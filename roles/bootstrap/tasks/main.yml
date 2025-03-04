@@ -1,0 +1,12 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for bootstrap
+
+- name: Include tasks to check become method
+  ansible.builtin.include_tasks: become.yml
+
+- name: Include tasks to setup ansible user
+  ansible.builtin.include_tasks: ansible-user-setup.yml
+
+- name: Include tasks to setup sudo
+  ansible.builtin.include_tasks: "sudo-{{ ansible_pkg_mgr }}.yml"

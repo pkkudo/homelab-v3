@@ -1,0 +1,33 @@
+---
+# ansible user setup
+# - create admin-ansible group
+# - create ansible user
+# - update ssh authorized keys for the ansible user
+
+- name: Create admin-ansible group
+  ansible.builtin.group:
+    name: admin-ansible
+    state: present
+  become_method: "{{ bootstrap_become_method }}"
+  become: true
+
+- name: Create ansible user in "admin-ansible" group, generate ssh key pair
+  # set the variable ansible_username in group_vars/all file
+  ansible.builtin.user:
+    name: "{{ ansible_username }}"
+    groups:
+      - admin-ansible
+    generate_ssh_key: true
+    ssh_key_type: ed25519
+    state: present
+    shell: "{{ ansible_user_shell }}"
+  become_method: "{{ bootstrap_become_method }}"
+  become: true
+
+- name: Add authorized key
+  ansible.posix.authorized_key:
+    user: "{{ ansible_username }}"
+    state: present
+    key: "{{ lookup('file', ansible_ssh_pubkey) }}"
+  become_method: "{{ bootstrap_become_method }}"
+  become: true

@@ -1,0 +1,24 @@
+---
+- name: Check if sudo is installed
+  ansible.builtin.command: which sudo
+  register: result_sudo_check
+  failed_when: false
+
+- name: Set sudo as become method
+  ansible.builtin.set_fact:
+    bootstrap_become_method: sudo
+
+- name: Set su as become method when sudo is not found on the system
+  ansible.builtin.set_fact:
+    bootstrap_become_method: su
+  when: result_sudo_check.rc != 0
+
+- name: Test if sudo is allowed for the current user
+  ansible.builtin.command: sudo -n echo hello-world
+  register: result_sudo_check
+  failed_when: false
+
+- name: Set su as become method when sudo is not allowed for the current user
+  ansible.builtin.set_fact:
+    bootstrap_become_method: su
+  when: result_sudo_check.rc != 0
