@@ -1,3 +1,13 @@
-# mise and python venv
-.mise.toml
 .venv
+collections
+playbooks/files/ssh
+playbooks/facts
+playbooks/files/cni
+playbooks/files/containerd
+playbooks/files/runc
+playbooks/files/kubernetes
+playbooks/files/kubernetes-certs
+playbooks/files/etcd
+playbooks/files/etcd-ca
+playbooks/files/etcd-certs
+inventory/group_vars/lab_kubernetes
