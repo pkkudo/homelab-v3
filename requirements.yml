@@ -1,0 +1,20 @@
+# ansible-galaxy collection install -r requirements.yml
+collections:
+  - name: community.docker
+    # https://github.com/ansible-collections/community.docker
+    version: 4.0.1
+  - name: community.general
+    # https://github.com/ansible-collections/community.general
+    version: 10.0.1
+  - name: community.crypto
+    # https://github.com/ansible-collections/community.crypto
+    version: 2.22.3
+  - name: ansible.posix
+    # https://github.com/ansible-collections/ansible.posix
+    version: 1.6.2
+  - name: kubernetes.core
+    # https://github.com/ansible-collections/kubernetes.core
+    version: 5.1.0
+  - name: ansible.utils
+    # https://github.com/ansible-collections/ansible.utils
+    version: 5.1.2
