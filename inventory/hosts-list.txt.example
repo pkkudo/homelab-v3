@@ -1,0 +1,11 @@
+# temporarily added on ansible master to help access lab nodes by name
+192.0.2.1 lab-cp1.lab.example.net lab-cp1
+192.0.2.2 lab-cp2.lab.example.net lab-cp2
+192.0.2.3 lab-cp3.lab.example.net lab-cp3
+192.0.2.4 lab-worker1.lab.example.net lab-worker1
+192.0.2.5 lab-etcd1.lab.example.net lab-etcd1
+192.0.2.6 lab-etcd2.lab.example.net lab-etcd2
+192.0.2.7 lab-etcd3.lab.example.net lab-etcd3
+192.0.2.16 lab-ns1.lab.example.net lab-ns1
+192.0.2.17 lab-ns2.lab.example.net lab-ns2
+192.0.2.24 hubble-ui.lab.example.net hubble-ui
