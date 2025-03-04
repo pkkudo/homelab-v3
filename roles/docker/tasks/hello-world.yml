@@ -1,0 +1,53 @@
+---
+- name: Block for hello-world
+  become: false
+  block:
+    - name: Pull hello world image
+      community.docker.docker_image:
+        name: hello-world
+        tag: latest
+        source: pull
+      when: vault_proxy_dockerhub is undefined
+
+    - name: Pull hello world image using proxy
+      community.docker.docker_image:
+        name: "{{ vault_proxy_dockerhub }}/library/hello-world"
+        tag: latest
+        source: pull
+      when: vault_proxy_dockerhub is defined
+
+    - name: Run hello world container
+      community.docker.docker_container:
+        name: test-hello-world
+        image: hello-world:latest
+        state: started
+        detach: false
+      register: result_docker_hello_world
+
+    - name: Print hello world output
+      ansible.builtin.debug:
+        msg: "{{ result_docker_hello_world.container.Output }}"
+
+  always:
+    - name: Remove hello-world container
+      community.docker.docker_container:
+        name: test-hello-world
+        image: hello-world:latest
+        state: absent
+
+    - name: Remove hello-world image
+      community.docker.docker_image:
+        name: hello-world
+        source: local
+        state: absent
+        force_absent: true
+      when: vault_proxy_dockerhub is undefined
+
+    - name: Remove hello-world image pulled through proxy
+      community.docker.docker_image:
+        name: "{{ vault_proxy_dockerhub }}/library/hello-world"
+        tag: latest
+        source: local
+        state: absent
+        force_absent: true
+      when: vault_proxy_dockerhub is defined

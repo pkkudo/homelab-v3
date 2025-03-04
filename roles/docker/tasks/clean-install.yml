@@ -1,0 +1,27 @@
+---
+# - ansible community.docker requirements
+#   - <https://github.com/ansible-collections/community.docker?tab=readme-ov-file#external-requirements>
+# - clean up old package installations
+#   - docker.io docker-doc docker-compose podman-docker containerd runc
+# - clean up old data
+#   - /var/lib/docker
+#   - /var/lib/containerd
+#   - /etc/apt/sources.list.d/docker.list
+#   - /etc/apt/keyrings/docker.asc
+# - install docker
+#   - repo setup
+#   - install packages
+#   - enable docker on systemd
+#   - add ansible user to the docker group
+
+- name: Include tasks to install prerequisites for community.docker
+  ansible.builtin.include_tasks: "community-docker-requirements-{{ ansible_pkg_mgr }}.yml"
+
+- name: Include clean up tasks before installing docker
+  ansible.builtin.include_tasks: "cleanup-{{ ansible_pkg_mgr }}.yml"
+
+- name: Install docker
+  ansible.builtin.include_tasks: "install-{{ ansible_pkg_mgr }}.yml"
+
+- name: Server reboot
+  ansible.builtin.reboot:

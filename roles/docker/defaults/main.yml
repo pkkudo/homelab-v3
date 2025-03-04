@@ -1,0 +1,74 @@
+#SPDX-License-Identifier: MIT-0
+---
+# defaults file for docker
+
+# community.docker external requirements
+community_docker_requirements:
+  - python3-pip
+  - python3-requests
+
+# packages to uninstall before docker clean-installation, apt
+cleanup_pkg_apt:
+  - docker.io
+  - docker-doc
+  - docker-compose
+  - podman-docker
+  - containerd
+  - runc
+
+# packages to uninstall before docker clean-installation, dnf
+cleanup_pkg_dnf:
+  - docker
+  - docker-client
+  - docker-client-latest
+  - docker-common
+  - docker-latest
+  - docker-latest-logrotate
+  - docker-logrotate
+  - docker-engine
+  - podman
+  - runc
+
+# cleanup files/directories for docker clean-installation
+docker_cleanup_files:
+  - /var/lib/docker
+  - /var/lib/containerd
+  - /etc/apt/sources.list.d/docker.list
+  - /etc/apt/keyrings/docker.asc
+
+# installation using apt
+# version ref: https://download.docker.com/linux/debian/dists/bookworm/pool/stable/amd64/
+# docker_version_updated: 2024-11-11
+docker_version_debian: 5:27.5.1-1~debian.12~bookworm
+apt_docker_repo_url: "https://download.docker.com/linux/{{ ansible_distribution | lower }}"
+apt_docker_repo_keyring: "https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg"
+apt_docker_packages_ver:
+  - "docker-ce={{ docker_version_debian }}"
+  - "docker-ce-cli={{ docker_version_debian }}"
+  - containerd.io
+  - docker-buildx-plugin
+  - docker-compose-plugin
+apt_docker_packages:
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - docker-buildx-plugin
+  - docker-compose-plugin
+
+# installation using dnf
+# https://docs.docker.com/engine/install/rhel/
+# docker-ce-VERSION_STRING
+docker_version_rhel: 3:27.5.1-1.el9
+docker_cli_version_rhel: 1:27.5.1-1.el9
+dnf_docker_packages_ver:
+  - "docker-ce-{{ docker_version_rhel }}"
+  - "docker-ce-cli-{{ docker_cli_version_rhel }}"
+  - containerd.io
+  - docker-buildx-plugin
+  - docker-compose-plugin
+dnf_docker_packages:
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - docker-buildx-plugin
+  - docker-compose-plugin

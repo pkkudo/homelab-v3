@@ -1,0 +1,9 @@
+---
+- name: Get info on docker host
+  community.docker.docker_host_info:
+  register: result_docker_info
+  become: false
+
+- name: Show docker version
+  ansible.builtin.debug:
+    msg: "docker version {{ result_docker_info.host_info.ServerVersion }} found"

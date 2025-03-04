@@ -1,0 +1,6 @@
+---
+- name: Install community.docker external requirements
+  ansible.builtin.dnf:
+    name: "{{ item }}"
+    state: latest
+  loop: "{{ community_docker_requirements }}"

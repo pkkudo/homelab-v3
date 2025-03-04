@@ -1,0 +1,40 @@
+---
+- name: Apt docker repository setup
+  ansible.builtin.deb822_repository:
+    name: docker
+    types: [deb]
+    uris: "{{ apt_docker_repo_url }}"
+    signed_by: "{{ apt_docker_repo_keyring }}"
+    suites: ["{{ ansible_distribution_release | lower }}"]
+    components: [stable]
+    state: present
+    enabled: true
+
+- name: Install docker packages
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: present
+    update_cache: true
+    allow_downgrade: true
+    allow_change_held_packages: true
+  loop: "{{ apt_docker_packages_ver }}"
+
+- name: Apt-mark hold docker packages
+  ansible.builtin.dpkg_selections:
+    name: "{{ item }}"
+    selection: hold
+  loop: "{{ apt_docker_packages }}"
+
+- name: Ensure docker is enabled on systemd
+  ansible.builtin.systemd_service:
+    enabled: true
+    daemon_reload: true
+    state: started
+    name: docker
+
+- name: Ensure ansible user is in docker group
+  ansible.builtin.user:
+    name: "{{ ansible_user }}"
+    append: true
+    groups:
+      - docker

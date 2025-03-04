@@ -1,0 +1,14 @@
+---
+- name: Clean up files and directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop: "{{ docker_cleanup_files }}"
+  ignore_errors: true
+
+- name: Clean up packages using apt
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: absent
+  loop: "{{ cleanup_pkg_apt }}"
+  when: ansible_pkg_mgr == "apt"

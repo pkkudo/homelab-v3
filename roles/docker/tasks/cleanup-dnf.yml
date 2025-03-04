@@ -1,0 +1,14 @@
+---
+- name: Clean up files and directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop: "{{ docker_cleanup_files }}"
+  ignore_errors: true
+
+- name: Clean up packages using dnf
+  ansible.builtin.dnf:
+    name: "{{ item }}"
+    state: absent
+  loop: "{{ cleanup_pkg_dnf }}"
+  when: ansible_pkg_mgr == "dnf"

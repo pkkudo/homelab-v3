@@ -1,0 +1,15 @@
+---
+- name: Gather information on running containers
+  community.docker.docker_host_info:
+    containers: true
+  register: result
+  become: false
+
+- name: Show information on running containers if any
+  ansible.builtin.debug:
+    msg:
+      - "Image: {{ item.Image }}"
+      - "Status: {{ item.Status }}"
+  loop: "{{ result.containers }}"
+  when: (result.containers | default([])) | length > 0
+  become: false

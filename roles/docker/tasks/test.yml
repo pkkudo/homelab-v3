@@ -1,0 +1,6 @@
+---
+- name: Include tasks to confirm docker version
+  ansible.builtin.include_tasks: docker-version.yml
+
+- name: Include tasks to run hello-world
+  ansible.builtin.include_tasks: hello-world.yml

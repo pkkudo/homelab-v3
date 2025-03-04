@@ -1,0 +1,38 @@
+---
+- name: Install dnf packages for version lock
+  ansible.builtin.dnf:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - dnf-plugins-core
+    - dnf-plugin-versionlock
+
+- name: Add docker repository
+  ansible.builtin.command: dnf config-manager --add-repo https://download.docker.com/linux/rhel/docker-ce.repo
+
+- name: Install docker packages
+  ansible.builtin.dnf:
+    name: "{{ item }}"
+    state: present
+    allow_downgrade: true
+  loop: "{{ dnf_docker_packages_ver }}"
+
+- name: Dnf version lock docker packages
+  community.general.dnf_versionlock:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ dnf_docker_packages }}"
+
+- name: Ensure docker is enabled on systemd
+  ansible.builtin.systemd_service:
+    enabled: true
+    daemon_reload: true
+    state: started
+    name: docker
+
+- name: Add ansible user to the docker group
+  ansible.builtin.user:
+    name: "{{ ansible_user }}"
+    append: true
+    groups:
+      - docker
