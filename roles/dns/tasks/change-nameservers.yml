@@ -1,0 +1,111 @@
+---
+# tasks to change nameservers settings
+
+- name: Include tasks to identify network service
+  ansible.builtin.include_tasks: identify-network-service.yml
+
+- name: NetworkManager block
+  when: network_service == "networkmanager"
+  block:
+    - name: Check nameservers configured in NetworkManager
+      ansible.builtin.command: "nmcli device show {{ ansible_default_ipv4['interface'] }}"
+      changed_when: false
+      register: result_nmcli
+
+    - name: Block when IP4.DNS parameters not found
+      when: result_nmcli.stdout.find('IP4.DNS') == -1
+      block:
+        - name: Cleanup resolv.conf
+          ansible.builtin.lineinfile:
+            path: /etc/resolv.conf
+            regex: "^nameserver"
+            state: absent
+
+        - name: Set rotate option
+          ansible.builtin.lineinfile:
+            path: /etc/resolv.conf
+            line: "options rotate"
+
+        - name: Set search option
+          ansible.builtin.lineinfile:
+            path: /etc/resolv.conf
+            line: "search {{ domain_suffix }}"
+
+        - name: Update resolv.conf
+          ansible.builtin.lineinfile:
+            path: /etc/resolv.conf
+            line: "nameserver {{ item }}"
+          loop: "{{ nameservers }}"
+          register: update_resolv
+
+    - name: Add ipv4 dns nameservers
+      community.general.nmcli:
+        type: ethernet
+        conn_name: "{{ ansible_default_ipv4['interface'] }}"
+        dns4: "{{ nameservers }}"
+        dns4_options:
+          - "rotate"
+          - "timeout:1"
+        dns4_ignore_auto: true
+        dns4_search: "{{ domain_suffix }}"
+        state: present
+      when: result_nmcli.stdout.find('IP4.DNS') != -1
+
+    - name: Restart NetworkManager
+      ansible.builtin.systemd_service:
+        name: NetworkManager
+        state: restarted
+        daemon_reload: true
+
+- name: Networking block
+  when: network_service == "networking"
+  block:
+    - name: Cleanup resolv.conf
+      ansible.builtin.lineinfile:
+        path: /etc/resolv.conf
+        regex: "^nameserver"
+        state: absent
+
+    - name: Set rotate option
+      ansible.builtin.lineinfile:
+        path: /etc/resolv.conf
+        line: "options rotate"
+
+    - name: Set search option
+      ansible.builtin.lineinfile:
+        path: /etc/resolv.conf
+        line: "search {{ domain_suffix }}"
+
+    - name: Update resolv.conf
+      ansible.builtin.lineinfile:
+        path: /etc/resolv.conf
+        line: "nameserver {{ item }}"
+      loop: "{{ nameservers }}"
+      register: update_resolv
+
+    - name: Restart networking
+      ansible.builtin.systemd_service:
+        name: networking
+        state: restarted
+        daemon_reload: true
+
+- name: Networkd block
+  when: network_service == "networkd"
+  block:
+    - name: Identify netplan yaml file
+      ansible.builtin.command: ls -1 /etc/netplan
+      register: result_netplan
+      ignore_errors: true
+      changed_when: false
+
+    - name: Update netplan yaml
+      ansible.builtin.template:
+        src: netplan.j2
+        dest: "/etc/netplan/{{ result_netplan.stdout_lines[0] }}"
+        force: true
+        mode: "0600"
+      register: netplan
+
+    - name: Run netplan apply
+      ansible.builtin.command: netplan apply
+      when: netplan is changed

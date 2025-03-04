@@ -1,0 +1,10 @@
+#SPDX-License-Identifier: MIT-0
+---
+# defaults file for dns
+
+dns_docker_compose_dir: "/home/{{ ansible_user }}/dns"
+
+# ns
+nameservers:
+  - 192.0.2.16
+  - 192.0.2.17

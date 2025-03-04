@@ -1,0 +1,15 @@
+---
+- name: Stop and disable service
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    name: docker-dns
+    enabled: false
+    masked: false
+    state: stopped
+  become: true
+
+- name: Remove service unit file
+  ansible.builtin.file:
+    path: /etc/systemd/system/docker-dns.service
+    state: absent
+  become: true

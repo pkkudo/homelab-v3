@@ -1,0 +1,79 @@
+---
+# tasks to verify the service
+
+- name: Check if host command is available
+  ansible.builtin.command: which host
+  ignore_errors: true
+  delegate_to: localhost
+  register: result_host
+  changed_when: false
+
+- name: Check if dig command is available
+  ansible.builtin.command: which dig
+  ignore_errors: true
+  delegate_to: localhost
+  register: result_dig
+  changed_when: false
+
+- name: Test block using host command
+  when:
+    - result_host.rc == 0
+  block:
+    - name: Name resolution test - public
+      ansible.builtin.command: "host -t soa cloudflare.com. {{ hostvars[inventory_hostname_short]['ansible_default_ipv4']['address'] }}"
+      register: result_public
+      failed_when: result_public.rc > 0
+      changed_when: false
+      delegate_to: localhost
+
+    - name: Name resolution test - homelab
+      ansible.builtin.command: "host -t a {{ item }}.{{ domain_suffix }}. {{ hostvars[inventory_hostname_short]['ansible_default_ipv4']['address'] }}"
+      register: result_internal
+      failed_when: result_internal.rc > 0
+      changed_when: false
+      delegate_to: localhost
+      with_random_choice: "{{ groups['lab'] }}"
+      when: inventory_hostname_short is in groups['lab']
+
+    - name: Name resolution test - dummy
+      ansible.builtin.command: "host -t a happyansibleuser.local. {{ hostvars[inventory_hostname_short]['ansible_default_ipv4']['address'] }}"
+      register: result_dummy
+      failed_when: result_dummy.rc == 0
+      changed_when: false
+      delegate_to: localhost
+
+- name: Test block using dig command
+  vars:
+    status_string: NOERROR
+  when:
+    - result_dig.rc == 0
+  block:
+    - name: Name resolution test - public
+      ansible.builtin.command: "dig @{{ hostvars[inventory_hostname_short]['ansible_default_ipv4']['address'] }} cloudflare.com. soa"
+      register: result_public
+      failed_when: status_string not in result_public.stdout
+      changed_when: false
+      delegate_to: localhost
+
+    - name: Name resolution test - homelab
+      ansible.builtin.command: "dig @{{ hostvars[inventory_hostname_short]['ansible_default_ipv4']['address'] }} {{ item }}.{{ domain_suffix }}. a"
+      register: result_internal
+      failed_when: status_string not in result_internal.stdout
+      changed_when: false
+      delegate_to: localhost
+      with_random_choice: "{{ groups['lab'] }}"
+      when: inventory_hostname_short is in groups['lab']
+
+    - name: Name resolution test - dummy
+      ansible.builtin.command: "dig @{{ hostvars[inventory_hostname_short]['ansible_default_ipv4']['address'] }} happy.local. a"
+      register: result_dummy
+      failed_when: status_string in result_dummy.stdout
+      changed_when: false
+      delegate_to: localhost
+
+- name: Name lookup tests skipped
+  ansible.builtin.debug:
+    msg: "Name lookup tests were skipped as neither 'host' nor 'dig' command was found on the localhost"
+  when:
+    - result_host.rc > 0
+    - result_dig.rc > 0

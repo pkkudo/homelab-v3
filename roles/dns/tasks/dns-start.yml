@@ -1,0 +1,7 @@
+---
+- name: Start docker compose services
+  community.docker.docker_compose_v2:
+    project_src: "{{ dns_docker_compose_dir }}"
+    files: compose.yaml
+    state: present
+    wait: true

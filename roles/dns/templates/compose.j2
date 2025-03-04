@@ -1,0 +1,12 @@
+name: dns
+
+services:
+  dns:
+    image: "${unbound_image}:${unbound_image_tag}"
+    container_name: dns
+    hostname: dns
+    ports:
+      - "53:53/udp"
+      - "53:53"
+    volumes:
+      - "./config/a-records.conf:/opt/unbound/etc/unbound/a-records.conf:ro"

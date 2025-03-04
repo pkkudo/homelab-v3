@@ -1,0 +1,14 @@
+---
+# tasks to run DNS service
+
+- name: Include tasks to stop the service
+  ansible.builtin.include_tasks: dns-stop.yml
+
+- name: Include tasks to upload the latest setup
+  ansible.builtin.include_tasks: dns-upload-config.yml
+
+- name: Include tasks to start the service
+  ansible.builtin.include_tasks: dns-start.yml
+
+- name: Include tasks to verify
+  ansible.builtin.include_tasks: dns-verify.yml

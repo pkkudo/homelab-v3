@@ -1,0 +1,14 @@
+[Unit]
+Description=Docker Unbound DNS Service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+User={{ ansible_user }}
+WorkingDirectory={{ dns_docker_compose_dir }}
+ExecStart=/usr/bin/docker compose -f compose.yaml up -d
+ExecReload=/usr/bin/docker compose -f compose.yaml up -d
+ExecStop=/usr/bin/docker compose -f compose.yaml down
+
+[Install]
+WantedBy=multi-user.target

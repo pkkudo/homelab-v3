@@ -1,0 +1,80 @@
+---
+# tasks to check nameservers settings
+
+- name: Include tasks to identify network service
+  ansible.builtin.include_tasks: identify-network-service.yml
+
+- name: debug
+  ansible.builtin.debug:
+    var: network_service
+
+- name: NetworkManager block
+  when: network_service == "networkmanager"
+  block:
+    - name: Check nameservers configured in NetworkManager
+      ansible.builtin.command: "nmcli device show {{ ansible_default_ipv4['interface'] }}"
+      changed_when: false
+      register: result_nmcli
+
+    - name: Debug nmcli device show output
+      ansible.builtin.debug:
+        msg: "{{ item }}"
+      when: result_nmcli.stdout.find('IP4.DNS') != -1
+      loop: "{{ result_nmcli.stdout_lines | select('search', nmcli_dns_marker) }}"
+      vars:
+        nmcli_dns_marker: IP4.DNS
+
+    - name: Nameserver parameters not found
+      ansible.builtin.debug:
+        msg: "IP4.DNS parameters not found"
+      when: result_nmcli.stdout.find('IP4.DNS') == -1
+
+    - name: Additional block if nameservers are not configured on NetworkManager
+      when: result_nmcli.stdout.find('IP4.DNS') == -1
+      block:
+        - name: Check nameservers configured in /etc/resolv.conf file
+          ansible.builtin.debug:
+            msg: "{{ lookup('ansible.builtin.file', '/etc/resolv.conf') }}"
+
+        - name: Check the contents of /etc/resolv.conf
+          ansible.builtin.command: cat /etc/resolv.conf
+          register: result_resolvconf
+
+        - name: Debug resolv.conf
+          ansible.builtin.debug:
+            msg: "{{ item }}"
+          when: result_resolvconf.stdout.find('nameserver ') != -1
+          loop: "{{ result_resolvconf.stdout_lines | select('search', marker_nameserver) }}"
+          vars:
+            marker_nameserver: nameserver
+
+- name: Networkd block
+  when: network_service == "networkd"
+  block:
+    - name: Run netplan get
+      ansible.builtin.command: netplan get
+      register: result_netplan_get
+      changed_when: false
+
+    - name: Display netplan get output
+      ansible.builtin.debug:
+        msg: "{{ (result_netplan_get.stdout | from_yaml)['network']['ethernets'][ansible_default_ipv4['interface']]['nameservers']['addresses'] }}"
+
+- name: Networking block
+  when: network_service == "networking"
+  block:
+    - name: Check nameservers configured in /etc/resolv.conf file
+      ansible.builtin.debug:
+        msg: "{{ lookup('ansible.builtin.file', '/etc/resolv.conf') }}"
+
+    - name: Check the contents of /etc/resolv.conf
+      ansible.builtin.command: cat /etc/resolv.conf
+      register: result_resolvconf
+
+    - name: Debug resolv.conf
+      ansible.builtin.debug:
+        msg: "{{ item }}"
+      when: result_resolvconf.stdout.find('nameserver ') != -1
+      loop: "{{ result_resolvconf.stdout_lines | select('search', marker_nameserver) }}"
+      vars:
+        marker_nameserver: nameserver

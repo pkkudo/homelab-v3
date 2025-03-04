@@ -1,0 +1,28 @@
+---
+- name: Get nameservers, lab-ns1
+  ansible.builtin.shell:
+    cmd: |
+      set -o pipefail
+      host lab-ns1 | awk '{print $NF}'
+    executable: /bin/bash
+  register: result_ns1
+  delegate_to: localhost
+  become: false
+
+- name: Get nameservers, lab-ns2
+  ansible.builtin.shell:
+    cmd: |
+      set -o pipefail
+      host lab-ns2 | awk '{print $NF}'
+    executable: /bin/bash
+  register: result_ns2
+  delegate_to: localhost
+  become: false
+
+- name: Set ns fact
+  ansible.builtin.set_fact:
+    nameservers:
+      - "{{ result_ns1.stdout }}"
+      - "{{ result_ns2.stdout }}"
+  delegate_to: localhost
+  become: false

@@ -1,0 +1,57 @@
+---
+- name: Ensure the directory exists
+  ansible.builtin.file:
+    path: "{{ dns_docker_compose_dir }}/config"
+    state: directory
+    mode: "0755"
+
+- name: Check if a-records.conf template file exists
+  ansible.builtin.stat:
+    path: "{{ role_path }}/templates/a-records.j2"
+  register: result_dns_conf
+  run_once: true
+  delegate_to: localhost
+
+- name: Assetion on a-records.conf file
+  ansible.builtin.assert:
+    that: result_dns_conf.stat.islnk is defined
+    fail_msg: "Copy roles/dns/templates/a-records.j2.example and prepare templates/a-records.j2 file"
+  run_once: true
+  delegate_to: localhost
+
+- name: Upload config file
+  ansible.builtin.template:
+    src: templates/a-records.j2
+    dest: "{{ dns_docker_compose_dir }}/config/a-records.conf"
+    mode: "0644"
+    force: true
+
+- name: Upload compose file
+  ansible.builtin.template:
+    src: templates/compose.j2
+    dest: "{{ dns_docker_compose_dir }}/compose.yaml"
+    mode: "0644"
+    force: true
+
+- name: Upload env file
+  ansible.builtin.template:
+    src: templates/env.j2
+    dest: "{{ dns_docker_compose_dir }}/.env"
+    mode: "0644"
+    force: true
+
+- name: Verify compose file
+  ansible.builtin.command:
+    cmd: docker compose -f compose.yaml config
+    chdir: "{{ dns_docker_compose_dir }}"
+  register: result_compose_verify
+  changed_when: false
+
+- name: Print docker compose verify result
+  ansible.builtin.debug:
+    var: result_compose_verify
+
+- name: Pull image if missing
+  community.docker.docker_compose_v2_pull:
+    project_src: "{{ dns_docker_compose_dir }}"
+    policy: missing

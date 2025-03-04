@@ -1,0 +1,27 @@
+---
+- name: Identify network service
+  block:
+    - name: Network service on systemd service unit
+      ansible.builtin.shell: "systemctl show --state=active --type service | grep ^Name | grep -i netw"
+      register: result_network
+
+  always:
+    - name: NetworkManager
+      ansible.builtin.set_fact:
+        network_service: networkmanager
+      when: result_network.stdout is regex("NetworkManager")
+
+    - name: Networkd
+      ansible.builtin.set_fact:
+        network_service: networkd
+      when: result_network.stdout is regex("systemd-networkd")
+
+    - name: Networking
+      ansible.builtin.set_fact:
+        network_service: networking
+      when: result_network.stdout is regex("networking")
+
+    - name: Assertion on network service identification
+      ansible.builtin.assert:
+        that: network_service is defined
+        fail_msg: "Network service on {{ inventory_hostname_short }} was not identified. Check and revise the tasks."
