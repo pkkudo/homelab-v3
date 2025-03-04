@@ -1,0 +1,7 @@
+# ansible remote access
+ansible_user: "{{ vault_ansible_user }}"
+ansible_username: "{{ vault_ansible_user }}" # required by bootstrap playbook
+ansible_ssh_private_key_file: "{{ playbook_dir }}/files/ssh/id_ed25519_ansible"
+ansible_ssh_pubkey: "{{ playbook_dir }}/files/ssh/id_ed25519_ansible.pub"
+domain_suffix: "lab.example.net"
+ansible_host: "{{ inventory_hostname_short }}.{{ domain_suffix }}"
