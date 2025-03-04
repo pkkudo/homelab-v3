@@ -1,0 +1,7 @@
+---
+- name: Download .kube/config file in lab kubernetes cluster
+  ansible.builtin.fetch:
+    src: "/home/{{ ansible_user }}/.kube/config"
+    dest: files/kubernetes/config
+  run_once: true
+  when: inventory_hostname in groups['lab_k8s_cp']

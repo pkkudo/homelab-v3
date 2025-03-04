@@ -1,0 +1,14 @@
+---
+# tasks to check product uuid
+- name: Check product uuid
+  ansible.builtin.command:
+    argv:
+      - cat
+      - "{{ dir_product_uuid | quote }}"
+  register: product_uuid
+  changed_when: false
+  become: true
+
+- name: Set product uuid fact
+  ansible.builtin.set_fact:
+    product_uuid: "{{ product_uuid.stdout }}"

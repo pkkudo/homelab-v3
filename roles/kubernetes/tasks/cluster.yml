@@ -1,0 +1,37 @@
+---
+- name: Include tasks to prepare etcd cluster member list
+  ansible.builtin.include_tasks: etcd/member-list.yml
+
+- name: Include tasks to prepare control plane node list
+  ansible.builtin.include_tasks: control-plane/member-list.yml
+
+- name: Include tasks to prepare kubeadm config file
+  ansible.builtin.include_tasks: control-plane/kubeadm-config.yml
+  when: inventory_hostname in groups['k8s_cp'] or inventory_hostname in groups['lab_k8s_cp']
+
+- name: Include tasks to prepare static pods
+  ansible.builtin.include_tasks: control-plane/static-pods.yml
+  when: inventory_hostname in groups['k8s_cp'] or inventory_hostname in groups['lab_k8s_cp']
+
+- name: Include tasks to place kubernetes PKI files on control plane nodes
+  ansible.builtin.include_tasks: control-plane/pki.yml
+  when: inventory_hostname in groups['k8s_cp'] or inventory_hostname in groups['lab_k8s_cp']
+
+- name: Include tasks to pre-pull images
+  ansible.builtin.include_tasks: control-plane/pull-images.yml
+  when: inventory_hostname in groups['k8s_cp'] or inventory_hostname in groups['lab_k8s_cp']
+
+- name: Include tasks to start kubelet
+  ansible.builtin.include_tasks: control-plane/kubelet.yml
+
+- name: Include tasks to initialize kubernetes cluster on control plane nodes
+  ansible.builtin.include_tasks: control-plane/init.yml
+  when: inventory_hostname in groups['k8s_cp'] or inventory_hostname in groups['lab_k8s_cp']
+
+- name: Include post-ks8-init tasks
+  ansible.builtin.include_tasks: control-plane/post-init.yml
+  when: inventory_hostname in groups['k8s_cp'] or inventory_hostname in groups['lab_k8s_cp']
+
+- name: Include cluster member check tasks
+  ansible.builtin.include_tasks: control-plane/get-nodes.yml
+  when: inventory_hostname in groups['k8s_cp'] or inventory_hostname in groups['lab_k8s_cp']

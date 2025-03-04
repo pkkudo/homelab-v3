@@ -1,0 +1,9 @@
+---
+- name: Check cgroup version
+  ansible.builtin.command: "stat -fc %T /sys/fs/cgroup/"
+  register: result_cgroup
+  changed_when: false
+
+- name: Set fact, cgroup
+  ansible.builtin.set_fact:
+    cgroup: "{{ result_cgroup.stdout }}"

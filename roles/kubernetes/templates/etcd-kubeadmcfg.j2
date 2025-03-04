@@ -1,0 +1,32 @@
+{% set ipaddr = hostvars[inventory_hostname_short]['ansible_default_ipv4']['address'] %}
+---
+apiVersion: "kubeadm.k8s.io/v1beta4"
+kind: InitConfiguration
+nodeRegistration:
+    name: {{ inventory_hostname_short }}
+localAPIEndpoint:
+    advertiseAddress: {{ ipaddr }}
+---
+apiVersion: "kubeadm.k8s.io/v1beta4"
+kind: ClusterConfiguration
+etcd:
+    local:
+        serverCertSANs:
+        - "{{ inventory_hostname_short }}"
+        peerCertSANs:
+        - "{{ inventory_hostname_short }}"
+        extraArgs:
+        - name: initial-cluster
+          value: {{ lst_etcdhostname[0] }}=https://{{ lst_etcdipaddr[0] }}:2380,{{ lst_etcdhostname[1] }}=https://{{ lst_etcdipaddr[1] }}:2380,{{ lst_etcdhostname[2] }}=https://{{ lst_etcdipaddr[2] }}:2380
+        - name: initial-cluster-state
+          value: new
+        - name: name
+          value: {{ inventory_hostname_short }}
+        - name: listen-peer-urls
+          value: https://{{ ipaddr }}:2380
+        - name: listen-client-urls
+          value: https://{{ ipaddr }}:2379
+        - name: advertise-client-urls
+          value: https://{{ ipaddr }}:2379
+        - name: initial-advertise-peer-urls
+          value: https://{{ ipaddr }}:2380

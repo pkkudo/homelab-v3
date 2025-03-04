@@ -1,0 +1,25 @@
+---
+- name: Kubelet block
+  become: true
+  block:
+    - name: Ensure kubelet configuration path exists
+      ansible.builtin.file:
+        path: "{{ path_kubelet_conf | dirname }}"
+        state: directory
+        mode: "0755"
+
+    - name: Place kubelet configuration file
+      ansible.builtin.template:
+        src: templates/kubelet.conf.j2
+        dest: "{{ path_kubelet_conf }}"
+        mode: "0644"
+      notify:
+        - restart kubelet
+
+    - name: Place etcd service manager file
+      ansible.builtin.template:
+        src: templates/etcd-service-manager.conf.j2
+        dest: "{{ path_etcd_service_mgr_conf }}"
+        mode: "0644"
+      notify:
+        - restart kubelet

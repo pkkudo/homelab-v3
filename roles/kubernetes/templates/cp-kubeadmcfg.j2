@@ -1,0 +1,27 @@
+---
+apiVersion: kubeadm.k8s.io/v1beta4
+kind: ClusterConfiguration
+kubernetesVersion: stable
+controlPlaneEndpoint: "{{ kube_endpoint }}:{{ kube_endpoint_port }}"
+clusterName: {{ kube_clustername }}
+networking:
+  dnsDomain: {{ kube_cluster_domain }}
+  podSubnet: {{ kube_pod_cidr }}
+  serviceSubnet: {{ kube_svc_cidr }}
+etcd:
+  external:
+    endpoints:
+{% for etcd_ipaddr in lst_etcdipaddr %}
+      - https://{{ etcd_ipaddr }}:2379
+{% endfor %}
+    caFile: /etc/kubernetes/pki/etcd/ca.crt
+    certFile: /etc/kubernetes/pki/apiserver-etcd-client.crt
+    keyFile: /etc/kubernetes/pki/apiserver-etcd-client.key
+controllerManager:
+  extraArgs:
+    - name: "allocate-node-cidrs"
+      value: "true"
+    - name: "cluster-cidr"
+      value: "{{ kube_cluster_cidr }}"
+proxy:
+  disabled: true

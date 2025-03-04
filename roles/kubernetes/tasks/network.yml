@@ -1,0 +1,38 @@
+---
+# tasks to check cilium requirements
+
+- name: Kernel configuration options check
+  ansible.builtin.script: scripts/cilium_requirements.sh
+  register: result_requirements
+  when: kubernetes_role is defined
+  failed_when: "'Missing' in result_requirements.stdout"
+
+- name: Debug requirement check
+  ansible.builtin.debug:
+    var: result_requirements.stdout_lines
+  when: kubernetes_role is defined
+
+- name: Clean up kube-proxy
+  ansible.builtin.command: "{{ item }}"
+  loop:
+    - kubectl -n kube-system delete ds kube-proxy
+    - kubectl -n kube-system delete cm kube-proxy
+  run_once: true
+  when: kubernetes_role == "control-plane"
+  ignore_errors: true
+
+- name: Clean up kube entries in iptables
+  ansible.builtin.shell:
+    cmd: |
+      set -o pipefail
+      iptables-save | grep -v KUBE | iptables-restore
+    executable: /bin/bash
+  become: true
+  when: kubernetes_role == "control-plane" or kubernetes_role == "worker"
+
+- name: Install gateway api crds
+  ansible.builtin.command:
+    cmd: "kubectl apply -f {{ gateway_api_base_url }}/{{ item }}"
+  loop: "{{ gateway_api_crds }}"
+  run_once: true
+  when: kubernetes_role == "control-plane"

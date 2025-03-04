@@ -1,0 +1,14 @@
+---
+- name: Control plane node list, lab
+  ansible.builtin.set_fact:
+    lst_cphostname: "{{ lst_cphostname | default([]) + [item] }}"
+    lst_cpipaddr: "{{ lst_cpipaddr | default([]) + [hostvars[item]['ansible_default_ipv4']['address']] }}"
+  loop: "{{ groups['lab_k8s_cp'] }}"
+  when: groups['lab_k8s_cp']
+
+- name: Control plane node list, main
+  ansible.builtin.set_fact:
+    lst_cphostname: "{{ lst_cphostname | default([]) + [item] }}"
+    lst_cpipaddr: "{{ lst_cpipaddr | default([]) + [hostvars[item]['ansible_default_ipv4']['address']] }}"
+  loop: "{{ groups['k8s_cp'] }}"
+  when: groups['k8s_cp']

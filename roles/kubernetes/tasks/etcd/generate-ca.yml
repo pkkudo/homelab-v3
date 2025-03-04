@@ -1,0 +1,48 @@
+---
+- name: Ensure the etcd CA certs directory exists on ansible master
+  ansible.builtin.file:
+    path: files/etcd-ca
+    state: directory
+    mode: "0755"
+  run_once: true
+  delegate_to: localhost
+
+- name: Generate CA certs on the first etcd host
+  when: inventory_hostname_short == lst_etcdhostname[0]
+  become: true
+  block:
+    - name: Generate CA
+      ansible.builtin.command: kubeadm init phase certs etcd-ca
+
+    - name: Download CA certs to ansible master
+      ansible.builtin.fetch:
+        src: "/etc/kubernetes/pki/etcd/{{ item }}"
+        dest: "files/etcd-ca/{{ item }}"
+        flat: true
+      loop:
+        - ca.crt
+        - ca.key
+
+- name: Upload CA certs on the other etcd hosts
+  when: inventory_hostname_short != lst_etcdhostname[0]
+  become: true
+  block:
+    - name: Clean up existing etcd pki directory
+      ansible.builtin.file:
+        path: /etc/kubernetes/pki
+        state: absent
+
+    - name: Prepare the etcd pki directory
+      ansible.builtin.file:
+        path: /etc/kubernetes/pki/etcd
+        state: directory
+        mode: "0755"
+
+    - name: Upload CA certs
+      ansible.builtin.copy:
+        src: "files/etcd-ca/{{ item }}"
+        dest: "/etc/kubernetes/pki/etcd/{{ item }}"
+        mode: "0600"
+      loop:
+        - ca.crt
+        - ca.key

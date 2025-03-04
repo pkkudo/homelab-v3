@@ -1,0 +1,118 @@
+#SPDX-License-Identifier: MIT-0
+---
+# defaults file for kubernetes
+
+# kubernetes
+# curl -sSL https://dl.k8s.io/release/stable.txt
+version_kubernetes: v1.32.2
+version_kubernetes_major: 1.32
+
+# kubeadmcfg variables for documentation purpose
+# set the actual values in the group variable or elsewhere
+kube_endpoint: "lab-kube-endpoint.{{ domain_suffix }}"
+kube_endpoint_port: 8443
+kube_endpoint_vip: 192.0.2.8
+kube_clustername: lab-cluster
+kube_cluster_domain: "{{ domain_suffix }}"
+kube_svc_cidr: 10.96.0.0/16
+kube_pod_cidr: 10.244.0.0/16
+# kube-controller-manager
+# https://kubernetes.io/docs/reference/command-line-tools-reference/kube-controller-manager/
+# https://docs.cilium.io/en/stable/installation/k8s-install-external-etcd/#requirements
+kube_cluster_cidr: 10.244.0.0/16
+
+# product UUID
+dir_product_uuid: /sys/class/dmi/id/product_uuid
+
+# containerd
+# https://github.com/containerd/containerd/releases
+# https://github.com/containerd/containerd/releases/download/v2.0.1/containerd-2.0.1-linux-amd64.tar.gz
+ver_containerd: 2.0.2
+url_containerd: "https://github.com/containerd/containerd/releases/download/v{{ ver_containerd }}/containerd-{{ ver_containerd }}-linux-amd64.tar.gz"
+checksum_containerd: "https://github.com/containerd/containerd/releases/download/v{{ ver_containerd }}/containerd-{{ ver_containerd }}-linux-amd64.tar.gz.sha256sum"
+url_containerd_service_unit: "https://github.com/containerd/containerd/raw/refs/tags/v{{ ver_containerd }}/containerd.service"
+
+# runc
+# https://github.com/opencontainers/runc/releases
+# https://github.com/opencontainers/runc/releases/download/v1.2.3/runc.amd64
+ver_runc: 1.2.5
+url_runc: "https://github.com/opencontainers/runc/releases/download/v{{ ver_runc }}/runc.amd64"
+checksum_runc: "https://github.com/opencontainers/runc/releases/download/v{{ ver_runc }}/runc.sha256sum"
+
+# cni
+# https://github.com/containernetworking/plugins/releases
+# https://github.com/containernetworking/plugins/releases/download/v1.6.1/cni-plugins-linux-amd64-v1.6.1.tgz
+ver_cni: 1.6.2
+url_cni: "https://github.com/containernetworking/plugins/releases/download/v{{ ver_cni }}/cni-plugins-linux-amd64-v{{ ver_cni }}.tgz"
+checksum_cni: "https://github.com/containernetworking/plugins/releases/download/v{{ ver_cni }}/cni-plugins-linux-amd64-v{{ ver_cni }}.tgz.sha256"
+
+# apt
+apt_kube_gpg_key: "https://pkgs.k8s.io/core:/stable:/v{{ version_kubernetes_major }}/deb/Release.key"
+apt_kube_repo_url: "https://pkgs.k8s.io/core:/stable:/v{{ version_kubernetes_major }}/deb/"
+
+packages_apt_kubernetes:
+  - kubelet
+  - kubeadm
+  - kubectl
+  - cri-tools
+  - kubernetes-cni
+
+packages_apt_required:
+  - apt-transport-https
+  - ca-certificates
+  - gpg
+  - curl
+  - python3-debian
+
+packages_apt_additional:
+  - pigz # required for gitlab runner
+  - open-iscsi # required for longhorn
+  - nfs-common # required for longhorn using rwx
+  - util-linux # required for longhorn
+
+# dnf packages
+yum_kube_repo_url: "https://pkgs.k8s.io/core:/stable:/v{{ version_kubernetes_major }}/rpm/"
+yum_kube_repo_gpg_key: "https://pkgs.k8s.io/core:/stable:/v{{ version_kubernetes_major }}/rpm/repodata/repomd.xml.key"
+
+packages_dnf_kubernetes:
+  - kubelet
+  - kubeadm
+  - kubectl
+  - cri-tools
+  - kubernetes-cni
+
+packages_dnf_required:
+  - dnf-plugins-core
+  - dnf-plugin-versionlock
+  - ca-certificates
+  - curl
+
+packages_dnf_additional:
+  - pigz # required for gitlab runner
+  - iscsi-initiator-utils # required by longhorn
+  - nfs-utils # required by longhorn using rwx
+  - util-linux # required for longhorn
+
+# etcd
+# https://github.com/etcd-io/etcd/releases
+# https://github.com/etcd-io/etcd/releases/download/v3.5.17/etcd-v3.5.17-linux-amd64.tar.gz
+ver_etcd: 3.5.18
+url_etcd: "https://github.com/etcd-io/etcd/releases/download/v{{ ver_etcd }}/etcd-v{{ ver_etcd }}-linux-amd64.tar.gz"
+checksum_etcd: "https://github.com/etcd-io/etcd/releases/download/v{{ ver_etcd }}/SHA256SUMS"
+containerRuntimeEndpoint: unix:///var/run/containerd/containerd.sock
+cGroupDriver: systemd
+path_kubelet_conf: /etc/systemd/system/kubelet.service.d/kubelet.conf
+path_etcd_service_mgr_conf: /etc/systemd/system/kubelet.service.d/20-etcd-service-manager.conf
+
+
+# static pods for HA kube-apiservers
+# keepalived
+keepalived_image: osixia/keepalived
+keepalived_image_tag: stable
+keepalived_conf_path: /usr/local/etc/keepalived/keepalived.conf
+keepalived_auth_pass: 42
+keepalived_vr_id: 51
+# haproxy
+# https://hub.docker.com/_/haproxy
+haproxy_image: haproxy
+haproxy_image_tag: 3.1.5-alpine

@@ -1,0 +1,9 @@
+---
+- name: Include tasks to prepare control plane node list
+  ansible.builtin.include_tasks: control-plane/member-list.yml
+
+- name: Include tasks to join worker nodes to the kubernetes cluster
+  ansible.builtin.include_tasks: worker/join.yml
+
+- name: Include cluster member check tasks
+  ansible.builtin.include_tasks: control-plane/get-nodes.yml

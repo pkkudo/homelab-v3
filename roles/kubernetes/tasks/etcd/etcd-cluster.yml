@@ -1,0 +1,8 @@
+---
+- name: Generate etcd static pod manifest
+  ansible.builtin.command:
+    cmd: "kubeadm init phase etcd local --config=/tmp/kubeadmcfg.yaml"
+  notify:
+    - restart kubelet
+    - server reboot
+  become: true

@@ -1,0 +1,29 @@
+---
+- name: Include tasks to disable swap
+  ansible.builtin.include_tasks: prepare/disable-swap.yml
+
+- name: Include tasks to enable ipv4 forward
+  ansible.builtin.include_tasks: prepare/set-ipv4-forward.yml
+
+- name: Include tasks to setup containerd
+  ansible.builtin.include_tasks: prepare/containerd.yml
+
+- name: Include tasks to setup runc
+  ansible.builtin.include_tasks: prepare/runc.yml
+
+- name: Include tasks to setup cni
+  ansible.builtin.include_tasks: prepare/cni.yml
+
+- name: Include tasks to disable selinux
+  ansible.builtin.include_tasks: prepare/disable-selinux.yml
+  when: ansible_os_family == 'RedHat'
+
+- name: Include tasks to disable firewalld
+  ansible.builtin.include_tasks: prepare/disable-firewalld.yml
+  when: ansible_os_family == 'RedHat'
+
+- name: Include tasks to install kube packages
+  ansible.builtin.include_tasks: "prepare/install-kube-{{ ansible_pkg_mgr }}.yml"
+
+- name: Include tasks to prepare crictl
+  ansible.builtin.include_tasks: prepare/crictl.yml

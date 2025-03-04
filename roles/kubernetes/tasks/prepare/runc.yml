@@ -1,0 +1,43 @@
+---
+- name: Download files on ansible master
+  run_once: true
+  delegate_to: localhost
+  block:
+    - name: Ensure runc directory exists on ansible master
+      ansible.builtin.file:
+        path: files/runc
+        state: directory
+        mode: "0755"
+
+    - name: Download runc
+      ansible.builtin.get_url:
+        url: "{{ url_runc }}"
+        dest: "files/runc/runc-{{ ver_runc }}-amd64"
+        checksum: "sha256:{{ checksum_runc }}"
+        mode: "0644"
+
+- name: Upload runc
+  become: true
+  block:
+    - name: Reset tmp runc directory
+      ansible.builtin.file:
+        path: /tmp/runc
+        state: absent
+
+    - name: Ensure tmp runc directory exists
+      ansible.builtin.file:
+        path: /tmp/runc
+        state: directory
+        mode: "0755"
+
+    - name: Upload runc file
+      ansible.builtin.copy:
+        src: "files/runc/runc-{{ ver_runc }}-amd64"
+        dest: /tmp/runc/runc.amd64
+        mode: "0644"
+
+- name: Install runc
+  become: true
+  block:
+    - name: Install runc
+      ansible.builtin.command: install -m 755 /tmp/runc/runc.amd64 /usr/local/sbin/runc

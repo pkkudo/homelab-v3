@@ -1,0 +1,14 @@
+---
+- name: Confirm kubernetes node members
+  when: inventory_hostname_short == lst_cphostname[0]
+  block:
+    - name: Get nodes
+      ansible.builtin.command: "kubectl get nodes -o wide"
+      register: result_nodes
+
+    - name: Save the result
+      ansible.builtin.copy:
+        content: "{{ result_nodes.stdout }}"
+        dest: files/kubernetes/kubectl_get_nodes.txt
+        mode: "0755"
+      delegate_to: localhost

@@ -1,0 +1,7 @@
+---
+- name: Place crictl configuration file
+  ansible.builtin.template:
+    src: templates/crictl.yaml.j2
+    dest: /etc/crictl.yaml
+    mode: "0644"
+  become: true

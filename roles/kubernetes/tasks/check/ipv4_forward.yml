@@ -1,0 +1,10 @@
+---
+- name: Check kernel ipv4 forward settings
+  ansible.builtin.command: sysctl net.ipv4.ip_forward
+  become: true
+  register: result_ipv4_forward
+  changed_when: false
+
+- name: Set fact
+  ansible.builtin.set_fact:
+    ipv4_forward: "{{ result_ipv4_forward.stdout }}"

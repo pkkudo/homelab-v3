@@ -1,0 +1,54 @@
+---
+# check version
+# containerd, runc, and cni
+
+- name: Containerd block
+  block:
+    - name: Containerd version check
+      ansible.builtin.command: /usr/local/bin/containerd --version
+      register: result_containerd
+      changed_when: false
+
+    - name: Set fact, containerd
+      ansible.builtin.set_fact:
+        version_containerd: "{{ (result_containerd.stdout_lines | first).split()[2] }}"
+      when: result_containerd is succeeded
+
+  rescue:
+    - name: Set fact when containerd is not installed
+      ansible.builtin.set_fact:
+        version_containerd: "not installed"
+
+- name: Runc block
+  block:
+    - name: Runc version check
+      ansible.builtin.command: /usr/local/sbin/runc --version
+      register: result_runc
+      changed_when: false
+
+    - name: Set fact, runc
+      ansible.builtin.set_fact:
+        version_runc: "{{ (result_runc.stdout_lines | default(['not installed']) | first).split()[-1] }}"
+      when: result_runc is succeeded
+
+  rescue:
+    - name: Set fact when runc is not installed
+      ansible.builtin.set_fact:
+        version_runc: "not installed"
+
+- name: Cni block
+  block:
+    - name: Cni version check
+      ansible.builtin.command: /opt/cni/bin/dummy --version
+      register: result_cni
+      changed_when: false
+
+    - name: Set fact, cni
+      ansible.builtin.set_fact:
+        version_cni: "{{ (result_cni.stderr_lines | default(['not installed']) | first).split()[-1] }}"
+      when: result_cni is succeeded
+
+  rescue:
+    - name: Set fact when cni is not installed
+      ansible.builtin.set_fact:
+        version_cni: "not installed"

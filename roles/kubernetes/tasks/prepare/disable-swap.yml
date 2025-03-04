@@ -1,0 +1,26 @@
+---
+- name: Identify swap unit
+  ansible.builtin.shell:
+    cmd: |
+      set -o pipefail
+      systemctl show --type swap --state=active --no-pager | awk -F= '/^Names/ {print $2}' | sed 's/\"//g'
+    executable: /bin/bash
+  when: ansible_swaptotal_mb | int > 0
+  changed_when: false
+  register: result_swap
+
+- name: Disable swap
+  ansible.builtin.systemd_service:
+    name: "{{ result_swap.stdout | quote }}"
+    masked: true
+    daemon_reload: true
+  become: true
+  when: result_swap is not skipped
+  register: result_disable_swap
+  notify:
+    - server reboot
+
+- name: Debug swap disable task result
+  ansible.builtin.debug:
+    var: result_disable_swap
+  when: result_swap is not skipped

@@ -1,0 +1,22 @@
+#SPDX-License-Identifier: MIT-0
+---
+# handlers file for kubernetes
+
+- name: Reboot and wait 120 sec
+  ansible.builtin.reboot:
+    reboot_timeout: 120
+  listen: "server reboot"
+  become: true
+
+- name: Sysctl reload
+  ansible.builtin.command: sysctl --system
+  listen: "sysctl reload"
+  become: true
+
+- name: Restart kubelet
+  ansible.builtin.systemd_service:
+    state: restarted
+    daemon_reload: true
+    name: kubelet
+  listen: "restart kubelet"
+  become: true

@@ -1,0 +1,16 @@
+---
+- name: Prepare user .kube directory
+  ansible.builtin.file:
+    path: "/home/{{ ansible_user }}/.kube"
+    state: directory
+    mode: "0755"
+
+- name: Copy kubeadm config file to user directory
+  ansible.builtin.copy:
+    src: /etc/kubernetes/admin.conf
+    dest: "/home/{{ ansible_user }}/.kube/config"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0600"
+    remote_src: true
+  become: true

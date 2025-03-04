@@ -1,0 +1,19 @@
+---
+# tasks to check firewalld
+
+- name: Firewalld check
+  ansible.builtin.command: "firewall-cmd --state"
+  register: result_firewalld
+  ignore_errors: true
+  become: true
+  changed_when: false
+
+- name: Set fact when failed
+  ansible.builtin.set_fact:
+    firewalld: "n/a"
+  when: result_firewalld is failed
+
+- name: Set fact when succeeded
+  ansible.builtin.set_fact:
+    firewalld: "{{ result_firewalld.stdout }}"
+  when: result_firewalld is succeeded

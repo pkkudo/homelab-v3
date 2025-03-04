@@ -1,0 +1,50 @@
+# Kubernetes readiness check report for lab environment
+
+## Host Summary
+
+| hostname | product_uuid | swap | systemd swap unit | ipv4_forward | cgroup | selinux | firewalld |
+|----|----|----|----|----|----|----|----|
+{% for host in groups['lab_kubernetes'] %}
+{% if host not in groups['lab_etcd'] %}
+{% set product_uuid = hostvars[host]['product_uuid'] | default('undefined') %}
+{% set ipv4_forward = hostvars[host]['ipv4_forward'] | default('undefined') %}
+{% set cgroup = hostvars[host]['cgroup'] | default('undefined') %}
+{% set swap_unit_name = hostvars[host]['swap_unit_name'] | default('undefined') | quote %}
+{% set selinux = hostvars[host]['selinux'] | default('undefined') %}
+{% set firewalld = hostvars[host]['firewalld'] | default('undefined') %}
+| {{ host }} | {{ product_uuid }} | {{ hostvars[host]['ansible_swaptotal_mb'] | int }} | {{ swap_unit_name }} | {{ ipv4_forward }} | {{ cgroup }} | {{ selinux }} | {{ firewalld }} |
+{% endif %}
+{% endfor %}
+
+- UUID must be unique among cluster node members
+- swap must be disabled
+- `net.ipv4.ip_forward` must be set to `1`
+- cgroup version is expected to be `cgroup2fs`
+- selinux must not be in enforcing mode
+- firewalld must not be running
+
+## kubernetes Packages
+
+| hostname | kubeadm | kubelet | kubectl |
+|----|----|----|----|
+{% for host in groups['lab_kubernetes'] %}
+{% if host not in groups['lab_etcd'] %}
+{% set kubeadm = hostvars[host]['version_kubeadm'] | default('undefined') %}
+{% set kubelet = hostvars[host]['version_kubelet'] | default('undefined') %}
+{% set kubectl = hostvars[host]['version_kubectl'] | default('undefined') %}
+| {{ host }} | {{ kubeadm }} | {{ kubelet }} | {{ kubectl }} |
+{% endif %}
+{% endfor %}
+
+## Dependencies
+
+| hostname | containerd | runc | cni |
+|----|----|----|----|
+{% for host in groups['lab_kubernetes'] %}
+{% if host not in groups['lab_etcd'] %}
+{% set containerd = hostvars[host]['version_containerd'] | default('undefined') %}
+{% set runc = hostvars[host]['version_runc'] | default('undefined') %}
+{% set cni = hostvars[host]['version_cni'] | default('undefined') %}
+| {{ host }} | {{ containerd }} | {{ runc }} | {{ cni }} |
+{% endif %}
+{% endfor %}

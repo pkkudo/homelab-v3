@@ -1,0 +1,13 @@
+---
+- name: Get kubeadm join strings again
+  ansible.builtin.command:
+    cmd: kubeadm token create --print-join-command
+  when: inventory_hostname_short == lst_cphostname[0]
+  become: true
+  register: result_join
+  changed_when: false
+
+- name: Join worker nodes
+  ansible.builtin.command: "{{ hostvars[lst_cphostname[0]]['result_join']['stdout'] }}"
+  become: true
+  when: inventory_hostname in groups['k8s_worker'] or inventory_hostname in groups['lab_k8s_worker']

@@ -1,0 +1,18 @@
+---
+# tasks to check selinux status
+
+- name: Run getenforce
+  ansible.builtin.command: getenforce
+  register: result_getenforce
+  ignore_errors: true
+  changed_when: false
+
+- name: Set fact when failed
+  ansible.builtin.set_fact:
+    selinux: "n/a"
+  when: result_getenforce is failed
+
+- name: Set fact when succeeded
+  ansible.builtin.set_fact:
+    selinux: "{{ result_getenforce.stdout }}"
+  when: result_getenforce is succeeded

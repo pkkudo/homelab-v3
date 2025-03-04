@@ -1,0 +1,104 @@
+---
+- name: Block for localhost preparations
+  block:
+    - name: Ensure directory to store work log exists
+      ansible.builtin.file:
+        path: files/kubernetes
+        state: directory
+        mode: "0755"
+      delegate_to: localhost
+
+    - name: Ensure directory to store kubernetes cluster certs exists
+      ansible.builtin.file:
+        path: files/kubernetes-certs
+        state: directory
+        mode: "0755"
+      delegate_to: localhost
+
+- name: Block for the first control plane node
+  when: inventory_hostname_short == lst_cphostname[0]
+  block:
+    - name: Run kubeadm init on the first control plane node
+      ansible.builtin.command:
+        argv:
+          - kubeadm
+          - init
+          - --config
+          - /tmp/kubeadm-config.yaml
+      register: result_kubeadm_init
+      become: true
+
+    - name: Get kubeadm join strings again
+      ansible.builtin.command:
+        cmd: kubeadm token create --print-join-command
+      become: true
+      register: result_join
+
+    - name: Facts for kubeadm join
+      ansible.builtin.set_fact:
+        str_kubeadm_join_cp: "{{ result_join.stdout }} --control-plane"
+
+    - name: Download control plane certs to ansible master
+      ansible.builtin.fetch:
+        src: "/etc/kubernetes/pki/{{ item }}"
+        dest: "files/kubernetes-certs/{{ item }}"
+        flat: true
+      loop:
+        - ca.crt
+        - ca.key
+        - sa.key
+        - sa.pub
+        - front-proxy-ca.crt
+        - front-proxy-ca.key
+      become: true
+
+  always:
+    - name: Save the work log
+      ansible.builtin.copy:
+        content: "{{ result_kubeadm_init.stdout }}"
+        dest: files/kubernetes/kubeadm.log
+        mode: "0644"
+      delegate_to: localhost
+
+    - name: Save the error log
+      ansible.builtin.copy:
+        content: "{{ result_kubeadm_init.stderr }}"
+        dest: files/kubernetes/kubeadm.err
+        mode: "0644"
+      when: result_kubeadm_init.stderr is defined
+      delegate_to: localhost
+
+- name: Block for the remaining control plane nodes
+  when: inventory_hostname_short != lst_cphostname[0]
+  block:
+    - name: Upload CA certs
+      ansible.builtin.copy:
+        src: "files/kubernetes-certs/{{ item }}"
+        dest: "/etc/kubernetes/pki/{{ item }}"
+        mode: "0644"
+      loop:
+        - ca.crt
+        # - ca.key
+        # - sa.key
+        - sa.pub
+        - front-proxy-ca.crt
+        # - front-proxy-ca.key
+      become: true
+
+    - name: Upload CA keys
+      ansible.builtin.copy:
+        src: "files/kubernetes-certs/{{ item }}"
+        dest: "/etc/kubernetes/pki/{{ item }}"
+        mode: "0600"
+      loop:
+        # - ca.crt
+        - ca.key
+        - sa.key
+        # - sa.pub
+        # - front-proxy-ca.crt
+        - front-proxy-ca.key
+      become: true
+
+    - name: Join the kubernetes cluster as control plane
+      ansible.builtin.command: "{{ hostvars[lst_cphostname[0]]['str_kubeadm_join_cp'] }}"
+      become: true

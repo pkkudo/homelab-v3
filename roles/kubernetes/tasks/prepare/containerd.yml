@@ -1,0 +1,91 @@
+---
+- name: Download files on ansible master
+  run_once: true
+  delegate_to: localhost
+  block:
+    - name: Ensure file directory exists for containerd on ansible master
+      ansible.builtin.file:
+        path: files/containerd
+        state: directory
+        mode: "0755"
+
+    - name: Download containerd
+      ansible.builtin.get_url:
+        url: "{{ url_containerd }}"
+        dest: "files/containerd/containerd-{{ ver_containerd }}.tar.gz"
+        checksum: "sha256:{{ checksum_containerd }}"
+        mode: "0644"
+
+    - name: Download containerd systemd service unit file
+      ansible.builtin.get_url:
+        url: "{{ url_containerd_service_unit }}"
+        dest: "files/containerd/{{ url_containerd_service_unit | basename }}"
+        mode: "0644"
+
+- name: Upload containerd files
+  become: true
+  block:
+    - name: Reset tmp containerd directory
+      ansible.builtin.file:
+        path: /tmp/containerd
+        state: absent
+
+    - name: Ensure tmp containerd directory exists
+      ansible.builtin.file:
+        path: /tmp/containerd
+        state: directory
+        mode: "0755"
+
+    - name: Copy containerd compressed archive file
+      ansible.builtin.copy:
+        src: "files/containerd/containerd-{{ ver_containerd }}.tar.gz"
+        dest: /tmp/containerd/containerd.tar.gz
+        mode: "0644"
+
+    - name: Copy containerd systemd service unit file
+      ansible.builtin.copy:
+        src: "files/containerd/{{ url_containerd_service_unit | basename }}"
+        dest: /etc/systemd/system/containerd.service
+        mode: "0644"
+
+- name: Install and configure containerd
+  become: true
+  block:
+    - name: Extract containerd archive file
+      ansible.builtin.unarchive:
+        src: /tmp/containerd/containerd.tar.gz
+        dest: /usr/local
+        remote_src: true
+
+    - name: Prepare containerd directory /etc/containerd
+      ansible.builtin.file:
+        path: /etc/containerd
+        state: directory
+        mode: "0755"
+
+    - name: Generate containerd default config
+      # ansible.builtin.shell: /usr/local/bin/containerd config default > /etc/containerd/config.toml
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          /usr/local/bin/containerd config default > /etc/containerd/config.toml
+        executable: /bin/bash
+      changed_when: false
+
+    - name: Edit containerd config to enable systemd cgroup
+      # [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc]
+      # ...
+      #  [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
+      #    SystemdCgroup = true
+      ansible.builtin.replace:
+        path: /etc/containerd/config.toml
+        regexp: '^(\s*SystemdCgroup = )false$'
+        replace: '\g<1>true'
+
+- name: Start containerd using systemd service unit
+  ansible.builtin.systemd_service:
+    name: containerd
+    state: started
+    enabled: true
+    daemon_reload: true
+  become: true

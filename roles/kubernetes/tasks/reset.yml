@@ -1,0 +1,33 @@
+---
+- name: Reset block
+  when:
+    - inventory_hostname in groups['kubernetes'] or inventory_hostname in groups['lab_kubernetes']
+    - inventory_hostname not in groups['etcd']
+    - inventory_hostname not in groups['lab_etcd']
+  block:
+    - name: Run kubeadm reset
+      ansible.builtin.command: kubeadm reset -f
+      become: true
+      notify:
+        - server reboot
+
+    - name: Clean up iptables
+      ansible.builtin.command: "{{ item }}"
+      become: true
+      ignore_errors: true
+      loop:
+        - iptables -F
+        - iptables -t nat -F
+        - iptables -t mangle -F
+        - iptables -X
+
+    - name: Clean up IPVS
+      ansible.builtin.command: ipvsadm -C
+      become: true
+      ignore_errors: true
+
+    - name: Empty cni directory
+      ansible.builtin.file:
+        path: /etc/cni/net.d
+        state: absent
+      become: true

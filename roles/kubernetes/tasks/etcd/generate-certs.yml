@@ -1,0 +1,36 @@
+---
+- name: Upload kubeadm config file used to generate certificates
+  ansible.builtin.template:
+    src: templates/etcd-kubeadmcfg.j2
+    dest: /tmp/kubeadmcfg.yaml
+    mode: "0644"
+
+- name: Generate remaining certs
+  ansible.builtin.command:
+    cmd: "kubeadm init phase certs {{ item }} --config /tmp/kubeadmcfg.yaml"
+  loop:
+    - etcd-server
+    - etcd-peer
+    - etcd-healthcheck-client
+    - apiserver-etcd-client
+  become: true
+
+- name: Ensure the etcd certs directory exists on ansible master
+  ansible.builtin.file:
+    path: files/etcd-certs
+    state: directory
+    mode: "0755"
+  run_once: true
+  delegate_to: localhost
+
+- name: Download generated apiserver-etcd-client cert and key files
+  # will be used by kubernetes control plane nodes to access the etcd cluster
+  when: inventory_hostname_short == lst_etcdhostname[0]
+  become: true
+  ansible.builtin.fetch:
+    src: "/etc/kubernetes/pki/{{ item }}"
+    dest: "files/etcd-certs/{{ item }}"
+    flat: true
+  loop:
+    - apiserver-etcd-client.crt
+    - apiserver-etcd-client.key

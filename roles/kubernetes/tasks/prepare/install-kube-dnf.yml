@@ -1,0 +1,70 @@
+---
+- name: Dnf install required and additional packages
+  become: true
+  block:
+    - name: Install required packages
+      ansible.builtin.dnf:
+        name: "{{ item }}"
+        state: latest
+        update_cache: true
+      loop: "{{ packages_dnf_required }}"
+
+    - name: Install additional packages
+      ansible.builtin.dnf:
+        name: "{{ item }}"
+        state: latest
+        update_cache: true
+      loop: "{{ packages_dnf_additional }}"
+
+- name: Dnf install kubernetes packages
+  become: true
+  block:
+    - name: Release dnf version lock
+      community.general.dnf_versionlock:
+        name: "{{ item }}"
+        state: absent
+      loop: "{{ packages_dnf_kubernetes }}"
+      ignore_errors: true
+
+    - name: Ensure kubernetes repository exists
+      ansible.builtin.yum_repository:
+        name: kubernetes
+        description: Kubernetes
+        enabled: true
+        gpgcheck: true
+        repo_gpgcheck: true
+        baseurl: "{{ yum_kube_repo_url }}"
+        gpgkey: "{{ yum_kube_repo_gpg_key }}"
+        exclude: "{{ packages_dnf_kubernetes }}"
+
+    - name: Add kubernetes gpg key
+      ansible.builtin.rpm_key:
+        key: "{{ yum_kube_repo_gpg_key }}"
+        state: present
+      register: kubernetes_rpm_key
+
+    - name: Make cache
+      ansible.builtin.command: "yum -q makecache -y --disablerepo='*' --enablerepo='kubernetes'"
+      when: kubernetes_rpm_key is changed
+
+    - name: Install packages, kubernetes
+      ansible.builtin.dnf:
+        name: "{{ item }}"
+        state: present
+        update_cache: true
+        disable_excludes: kubernetes
+      loop: "{{ packages_dnf_kubernetes }}"
+
+    - name: Dnf version lock
+      community.general.dnf_versionlock:
+        name: "{{ item }}"
+        state: present
+      loop: "{{ packages_dnf_kubernetes }}"
+
+- name: Ensure kubelet is running
+  ansible.builtin.systemd_service:
+    name: kubelet
+    state: started
+    enabled: true
+    daemon_reload: true
+  become: true

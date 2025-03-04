@@ -1,0 +1,29 @@
+---
+- name: Upload etcd cluster certs
+  become: true
+  block:
+    - name: Clean up existing etcd pki directory
+      ansible.builtin.file:
+        path: /etc/kubernetes/pki
+        state: absent
+
+    - name: Prepare the etcd pki directory
+      ansible.builtin.file:
+        path: /etc/kubernetes/pki/etcd
+        state: directory
+        mode: "0755"
+
+    - name: Upload CA cert file
+      ansible.builtin.copy:
+        src: files/etcd-ca/ca.crt
+        dest: /etc/kubernetes/pki/etcd/ca.crt
+        mode: "0600"
+
+    - name: Upload CA cert file
+      ansible.builtin.copy:
+        src: "files/etcd-certs/{{ item }}"
+        dest: "/etc/kubernetes/pki/{{ item }}"
+        mode: "0600"
+      loop:
+        - apiserver-etcd-client.crt
+        - apiserver-etcd-client.key

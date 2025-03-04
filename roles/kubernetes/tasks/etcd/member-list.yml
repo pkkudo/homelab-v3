@@ -1,0 +1,14 @@
+---
+- name: Etcd cluster member list, lab
+  ansible.builtin.set_fact:
+    lst_etcdhostname: "{{ lst_etcdhostname | default([]) + [item] }}"
+    lst_etcdipaddr: "{{ lst_etcdipaddr | default([]) + [hostvars[item]['ansible_default_ipv4']['address']] }}"
+  loop: "{{ groups['lab_etcd'] }}"
+  when: groups['lab_etcd']
+
+- name: Etcd cluster member list, main
+  ansible.builtin.set_fact:
+    lst_etcdhostname: "{{ lst_etcdhostname | default([]) + [item] }}"
+    lst_etcdipaddr: "{{ lst_etcdipaddr | default([]) + [hostvars[item]['ansible_default_ipv4']['address']] }}"
+  loop: "{{ groups['etcd'] }}"
+  when: groups['etcd']

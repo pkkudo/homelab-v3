@@ -1,0 +1,69 @@
+---
+- name: Static pod manifests block
+  become: true
+  block:
+    - name: Ensure the static pod directory exists
+      ansible.builtin.file:
+        path: /etc/kubernetes/manifests
+        state: directory
+        mode: "0755"
+
+    - name: Upload keepalived static pod manifest
+      ansible.builtin.template:
+        src: templates/keepalived-manifest.j2
+        dest: /etc/kubernetes/manifests/keepalived.yaml
+        mode: "0644"
+
+    - name: Upload haproxy static pod manifest
+      ansible.builtin.template:
+        src: templates/haproxy-manifest.j2
+        dest: /etc/kubernetes/manifests/haproxy.yaml
+        mode: "0644"
+
+- name: Prepare directory to store configuration files for static pod services
+  ansible.builtin.file:
+    path: /home/{{ ansible_user }}/static_pod_conf.d
+    state: directory
+    mode: "0755"
+
+- name: Keepalived configuration block
+  block:
+    - name: Upload keepalived configuration file on the first control plane node
+      ansible.builtin.template:
+        src: templates/keepalived-conf.j2
+        dest: /home/{{ ansible_user }}/static_pod_conf.d/keepalived.conf
+        mode: "0644"
+      when: inventory_hostname_short == lst_cphostname[0]
+      vars:
+        keepalived_state: master
+        keepalived_priority: 101
+
+    - name: Upload keepalived configuration file on the other control plane nodes
+      ansible.builtin.template:
+        src: templates/keepalived-conf.j2
+        dest: /home/{{ ansible_user }}/static_pod_conf.d/keepalived.conf
+        mode: "0644"
+      when: inventory_hostname_short != lst_cphostname[0]
+      vars:
+        keepalived_state: backup
+        keepalived_priority: 100
+
+    - name: Upload keepalived health check script for apiserver
+      ansible.builtin.template:
+        src: templates/keepalived-check-script.j2
+        dest: /home/{{ ansible_user }}/static_pod_conf.d/check_apiserver.sh
+        mode: "0755"
+
+- name: Haproxy configuration block
+  block:
+    - name: Upload haproxy configuration file
+      ansible.builtin.template:
+        src: templates/haproxy-conf.j2
+        dest: /home/{{ ansible_user }}/static_pod_conf.d/haproxy.cfg
+        mode: "0644"
+      when: groups[item]
+      vars:
+        control_plane_group: "{{ item }}"
+      loop:
+        - k8s_cp
+        - lab_k8s_cp

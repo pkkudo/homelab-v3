@@ -1,0 +1,32 @@
+---
+- name: Download files on ansible master
+  run_once: true
+  delegate_to: localhost
+  block:
+    - name: Ensure file directory exists for etcd on ansible master
+      ansible.builtin.file:
+        path: files/etcd
+        state: directory
+        mode: "0755"
+
+    - name: Download etcd release archive
+      ansible.builtin.get_url:
+        url: "{{ url_etcd }}"
+        dest: "files/etcd"
+        checksum: "sha256:{{ checksum_etcd }}"
+        mode: "0644"
+
+    - name: Extract etcd archive
+      ansible.builtin.unarchive:
+        src: "files/etcd/etcd-v{{ ver_etcd }}-linux-amd64.tar.gz"
+        dest: "files/etcd"
+        keep_newer: true
+
+- name: Upload etcdctl
+  become: true
+  block:
+    - name: Copy containerd compressed archive file
+      ansible.builtin.copy:
+        src: "files/etcd/etcd-v{{ ver_etcd }}-linux-amd64/etcdctl"
+        dest: /usr/local/bin/etcdctl
+        mode: "0755"

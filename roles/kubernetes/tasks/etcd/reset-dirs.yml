@@ -1,0 +1,9 @@
+---
+- name: Clean up kubernetes and etcd directories
+  become: true
+  ansible.builtin.file:
+    path: /etc/kubernetes
+    state: absent
+  loop:
+    - /etc/kubernetes
+    - /var/lib/etcd

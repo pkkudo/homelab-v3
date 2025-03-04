@@ -1,0 +1,54 @@
+---
+# check version
+# kubeadm, kubelet, and kubectl
+
+- name: Check kubeadm
+
+  block:
+    - name: Check kubeadm version
+      ansible.builtin.command: kubeadm version -o short
+      register: result_kubeadm
+      changed_when: false
+
+    - name: Set kubeadm version fact
+      ansible.builtin.set_fact:
+        version_kubeadm: "{{ result_kubeadm.stdout }}"
+
+  rescue:
+    - name: Fact when kubeadm version check failed
+      ansible.builtin.set_fact:
+        version_kubeadm: "not installed"
+
+- name: Check kubelet
+
+  block:
+    - name: Check kubelet version
+      ansible.builtin.command: kubelet --version
+      register: result_kubelet
+      changed_when: false
+
+    - name: Set kubelet version fact
+      ansible.builtin.set_fact:
+        version_kubelet: "{{ (result_kubelet.stdout | split)[-1] }}"
+
+  rescue:
+    - name: Fact when kubelet version check failed
+      ansible.builtin.set_fact:
+        version_kubelet: "not installed"
+
+- name: Check kubectl
+
+  block:
+    - name: Check kubectl version
+      ansible.builtin.command: kubectl version --client
+      register: result_kubectl
+      changed_when: false
+
+    - name: Set kubectl version fact
+      ansible.builtin.set_fact:
+        version_kubectl: "{{ (result_kubectl.stdout_lines[0] | split)[-1] }}"
+
+  rescue:
+    - name: Fact when kubectl version check failed
+      ansible.builtin.set_fact:
+        version_kubectl: "not installed"

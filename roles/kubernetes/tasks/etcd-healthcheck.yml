@@ -1,0 +1,116 @@
+---
+- name: Block for lab
+  when: groups['lab_etcd']
+  block:
+    - name: Run etcd endpoint health check
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/etcdctl
+          - --cert
+          - /etc/kubernetes/pki/etcd/peer.crt
+          - --key
+          - /etc/kubernetes/pki/etcd/peer.key
+          - --cacert
+          - /etc/kubernetes/pki/etcd/ca.crt
+          - --endpoints
+          - "https://{{ endpoint_ipaddr }}:2379"
+          - endpoint
+          - health
+      environment:
+        ETCDCTL_API: 3
+      become: true
+      with_random_choice: "{{ groups['lab_etcd'] }}"
+      vars:
+        endpoint_ipaddr: "{{ hostvars[item]['ansible_facts']['default_ipv4']['address'] }}"
+      register: result_etcdctl_endpoint
+      changed_when: false
+
+    - name: Run etcd cluster health check
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/etcdctl
+          - --cert
+          - /etc/kubernetes/pki/etcd/peer.crt
+          - --key
+          - /etc/kubernetes/pki/etcd/peer.key
+          - --cacert
+          - /etc/kubernetes/pki/etcd/ca.crt
+          - --endpoints
+          - "https://{{ endpoint_ipaddr }}:2379"
+          - endpoint
+          - status
+          - --cluster
+      environment:
+        ETCDCTL_API: 3
+      become: true
+      with_random_choice: "{{ groups['lab_etcd'] }}"
+      vars:
+        endpoint_ipaddr: "{{ hostvars[item]['ansible_facts']['default_ipv4']['address'] }}"
+      register: result_etcdctl_cluster
+      changed_when: false
+
+    - name: Print results - endpoint
+      ansible.builtin.debug:
+        msg: "{{ result_etcdctl_endpoint['results'][0]['stdout'] }}"
+
+    - name: Print results - cluster
+      ansible.builtin.debug:
+        var: result_etcdctl_cluster['results'][0]['stdout_lines']
+
+- name: Block for main environment
+  when: groups['etcd']
+  block:
+    - name: Run etcd endpoint health check
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/etcdctl
+          - --cert
+          - /etc/kubernetes/pki/etcd/peer.crt
+          - --key
+          - /etc/kubernetes/pki/etcd/peer.key
+          - --cacert
+          - /etc/kubernetes/pki/etcd/ca.crt
+          - --endpoints
+          - "https://{{ endpoint_ipaddr }}:2379"
+          - endpoint
+          - health
+      environment:
+        ETCDCTL_API: 3
+      become: true
+      with_random_choice: "{{ groups['etcd'] }}"
+      vars:
+        endpoint_ipaddr: "{{ hostvars[item]['ansible_facts']['default_ipv4']['address'] }}"
+      register: result_etcdctl_endpoint
+      changed_when: false
+
+    - name: Run etcd cluster health check
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/etcdctl
+          - --cert
+          - /etc/kubernetes/pki/etcd/peer.crt
+          - --key
+          - /etc/kubernetes/pki/etcd/peer.key
+          - --cacert
+          - /etc/kubernetes/pki/etcd/ca.crt
+          - --endpoints
+          - "https://{{ endpoint_ipaddr }}:2379"
+          - endpoint
+          - status
+          - --cluster
+      environment:
+        ETCDCTL_API: 3
+      become: true
+      with_random_choice: "{{ groups['etcd'] }}"
+      vars:
+        endpoint_ipaddr: "{{ hostvars[item]['ansible_facts']['default_ipv4']['address'] }}"
+      register: result_etcdctl_cluster
+      changed_when: false
+
+    - name: Print results - endpoint
+      ansible.builtin.debug:
+        msg: "{{ result_etcdctl_endpoint['results'][0]['stdout'] }}"
+
+    - name: Print results - cluster
+      ansible.builtin.debug:
+        var: result_etcdctl_cluster['results'][0]['stdout_lines']

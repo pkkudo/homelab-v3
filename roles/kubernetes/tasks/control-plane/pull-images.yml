@@ -1,0 +1,15 @@
+---
+- name: Pre-pull images
+  ansible.builtin.command: "kubeadm config images pull"
+  become: true
+
+- name: Check crictl image
+  ansible.builtin.command: "crictl image ls"
+  become: true
+  register: result_images
+  when: xxx is defined
+
+- name: Print image list
+  ansible.builtin.debug:
+    var: "{{ result_images.stdout_lines | join('\n') }}"
+  when: xxx is defined

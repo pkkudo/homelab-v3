@@ -1,0 +1,64 @@
+---
+- name: Ensure directory to store reports exists
+  ansible.builtin.file:
+    path: files/kubernetes
+    state: directory
+    mode: "0755"
+  delegate_to: localhost
+  run_once: true
+
+- name: Include tasks on product uuid
+  ansible.builtin.include_tasks: check/product_uuid.yml
+
+- name: Include tasks on swap
+  ansible.builtin.include_tasks: check/swap.yml
+
+- name: Include tasks on kernel ipv4 forward
+  ansible.builtin.include_tasks: check/ipv4_forward.yml
+
+- name: Include tasks on cgroup version
+  ansible.builtin.include_tasks: check/cgroup.yml
+
+- name: Include tasks on containerd, runc, and cni version
+  ansible.builtin.include_tasks: check/containerd.yml
+
+- name: Include tasks on firewalld
+  ansible.builtin.include_tasks: check/firewalld.yml
+
+- name: Include tasks on selinux
+  ansible.builtin.include_tasks: check/selinux.yml
+
+- name: Include tasks on kube version
+  ansible.builtin.include_tasks: check/kube.yml
+
+- name: Generate report for lab hosts
+  ansible.builtin.template:
+    src: templates/lab-k8s-check.j2
+    dest: files/kubernetes/lab.md
+    mode: "0644"
+  delegate_to: localhost
+  when: groups['lab_k8s_cp'] or groups['lab_k8s_worker']
+
+- name: Generate report for main hlv3 hosts
+  ansible.builtin.template:
+    src: templates/k8s-check.j2
+    dest: files/kubernetes/hlv3.md
+    mode: "0644"
+  delegate_to: localhost
+  when: groups['k8s_cp'] or groups['k8s_worker']
+
+- name: Generate report for lab etcd hosts
+  ansible.builtin.template:
+    src: templates/lab-etcd-check.j2
+    dest: files/kubernetes/lab-etcd.md
+    mode: "0644"
+  delegate_to: localhost
+  when: groups['lab_etcd']
+
+- name: Generate report for main hlv3 etcd hosts
+  ansible.builtin.template:
+    src: templates/etcd-check.j2
+    dest: files/kubernetes/etcd.md
+    mode: "0644"
+  delegate_to: localhost
+  when: groups['etcd']

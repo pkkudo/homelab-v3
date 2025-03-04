@@ -1,0 +1,53 @@
+---
+- name: Apt install required and additional packages
+  become: true
+  block:
+    - name: Install required packages
+      ansible.builtin.apt:
+        name: "{{ item }}"
+        state: latest
+        update_cache: true
+      loop: "{{ packages_apt_required }}"
+
+    - name: Install additional packages
+      ansible.builtin.apt:
+        name: "{{ item }}"
+        state: latest
+        update_cache: true
+      loop: "{{ packages_apt_additional }}"
+
+- name: Apt install kubernetes packages
+  become: true
+  block:
+    - name: Kubernetes apt repository preparation
+      # https://www.jeffgeerling.com/blog/2022/aptkey-deprecated-debianubuntu-how-fix-ansible
+      # https://gist.github.com/roib20/27fde10af195cee1c1f8ac5f68be7e9b
+      # https://gist.github.com/roib20/27fde10af195cee1c1f8ac5f68be7e9b?permalink_comment_id=4980485#gistcomment-4980485
+      ansible.builtin.deb822_repository:
+        name: kubernetes
+        uris: "{{ apt_kube_repo_url }}"
+        signed_by: "{{ apt_kube_gpg_key }}"
+        suites: [/]
+        enabled: true
+
+    - name: Install packages, kubernetes
+      ansible.builtin.apt:
+        name: "{{ item }}"
+        state: present
+        update_cache: true
+        allow_change_held_packages: false
+      loop: "{{ packages_apt_kubernetes }}"
+
+    - name: Apt-hold kubernetes packages
+      ansible.builtin.dpkg_selections:
+        name: "{{ item }}"
+        selection: hold
+      loop: "{{ packages_apt_kubernetes }}"
+
+- name: Ensure kubelet is running
+  ansible.builtin.systemd_service:
+    name: kubelet
+    state: started
+    enabled: true
+    daemon_reload: true
+  become: true

@@ -1,0 +1,6 @@
+---
+- name: Prepare kubeadm-config.yaml for control plane
+  ansible.builtin.template:
+    src: templates/cp-kubeadmcfg.j2
+    dest: /tmp/kubeadm-config.yaml
+    mode: "0644"

@@ -1,0 +1,23 @@
+---
+# etcd installation tasks
+
+- name: Include tasks to prepare etcd cluster member list
+  ansible.builtin.include_tasks: etcd/member-list.yml
+
+- name: Include tasks to reset etcd directories
+  ansible.builtin.include_tasks: etcd/reset-dirs.yml
+
+- name: Include tasks to prepare etcdctl
+  ansible.builtin.include_tasks: etcd/etcdctl.yml
+
+- name: Include tasks to configure kubelet
+  ansible.builtin.include_tasks: etcd/kubelet.yml
+
+- name: Include tasks to generate etcd CA certs
+  ansible.builtin.include_tasks: etcd/generate-ca.yml
+
+- name: Include tasks to generate the remaining certs using common CA
+  ansible.builtin.include_tasks: etcd/generate-certs.yml
+
+- name: Include tasks to generate static pod manifest and spin up the etcd cluster
+  ansible.builtin.include_tasks: etcd/etcd-cluster.yml
