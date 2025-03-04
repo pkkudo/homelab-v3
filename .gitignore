@@ -10,4 +10,4 @@ playbooks/files/kubernetes-certs
 playbooks/files/etcd
 playbooks/files/etcd-ca
 playbooks/files/etcd-certs
-inventory/group_vars/lab_kubernetes
+inventory/hosts-list.txt
