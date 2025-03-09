@@ -2,7 +2,7 @@
 - name: Clean up kubernetes and etcd directories
   become: true
   ansible.builtin.file:
-    path: /etc/kubernetes
+    path: "{{ item }}"
     state: absent
   loop:
     - /etc/kubernetes
